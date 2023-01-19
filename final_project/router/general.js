@@ -1,8 +1,3 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
-import './index.css';
-import axios from 'axios';
-
 const express = require('express');
 let books = require("./booksdb.js");
 let isValid = require("./auth_users.js").isValid;
@@ -10,27 +5,30 @@ let users = require("./auth_users.js").users;
 const public_users = express.Router();
 
 //register a new user
-public_users.post("/register", (req,res) => {
-  const email = req.body.email;
-  if (users[email]) {
-    res.send("User already exists!");
+const doesExist = (username)=>{
+  let userswithsamename = users.filter((user)=>{
+    return user.username === username
+  });
+  if(userswithsamename.length > 0){
+    return true;
   } else {
-    if (!isValid(req.body.password)) {
-      res.send("Password should be at least 8 characters long and should contain at least one number, one uppercase and one lowercase letter");
-    }
-    if (!req.body.firstName) {
-      res.send("Please enter your first name");
-    }
-    if (!req.body.lastName) {
-      res.send("Please enter your last name");
-    }
-    users[email] = {
-      password: req.body.password,
-      firstName: req.body.firstName,
-      lastName: req.body.lastName
-    };
-    res.send("User has been registered!");
+    return false;
   }
+}
+
+public_users.post("/register", (req,res) => {
+  const username = req.body.username;
+  const password = req.body.password;
+
+  if (username && password) {
+    if (!doesExist(username)) { 
+      users.push({"username":username,"password":password});
+      return res.status(200).json({message: "User successfully registred. Now you can login"});
+    } else {
+      return res.status(404).json({message: "User already exists!"});    
+    }
+  } 
+  return res.status(404).json({message: "Unable to register user."});
 });
 
 //
